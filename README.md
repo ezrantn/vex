@@ -39,7 +39,7 @@ This command is equivalent to the format:
 By default, the `replace` command is **case sensitive**; however, you can make it case insensitive by passing an argument:
 
 ```shell
-vex replace -i "foo:bar=input.txt"
+vex replace "foo:bar=input.txt" -i
 ```
 
 - `-i` stands for case insensitive.
