@@ -26,8 +26,8 @@ vex replace "foo:bar=input.txt"
 
 Where:
 
-- `foo` is the text you want to find,
-- `bar` is the text you want to replace it with,
+- `foo` is the text you want to find.
+- `bar` is the text you want to replace it with.
 - `input.txt` is the file where the operation will take place.
   
 This command is equivalent to the format:
@@ -36,7 +36,13 @@ This command is equivalent to the format:
 [find:replace=<textinput>]
 ```
 
-This means you can think of the `command` as specifying a transformation where `find` is the text to search for, `replace` is the text to substitute, and <textinput> denotes the source file. 
+By default, the `replace` command is **case sensitive**; however, you can make it case insensitive by passing an argument:
+
+```shell
+vex replace -i "foo:bar=input.txt"
+```
+
+- `-i` stands for case insensitive.
 
 ### 2. File Input/Output
 
