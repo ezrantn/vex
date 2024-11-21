@@ -20,17 +20,18 @@ var loadCmd = &cobra.Command{
 
 		file, err := parser.ParseFileCommand()
 		if err != nil {
-			fmt.Printf("Error parsing command: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Error parsing command: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Expected syntax: :=file_name\n")
 			return
 		}
 
 		content, err := os.ReadFile(file)
 		if err != nil {
-			fmt.Printf("Error reading file: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Error reading file '%s': %v\n", file, err)
 			return
 		}
 
 		loadedContent = string(content)
-		fmt.Printf("File '%s' successfully loaded in the system\n", file)
+		fmt.Printf("Successfully loaded file '%s' into memory.\n", file)
 	},
 }
