@@ -21,13 +21,19 @@ var replaceCmd = &cobra.Command{
 		parser := dsl.NewParser(input)
 		find, replace, file, err := parser.ParseReplaceCommand()
 		if err != nil {
-			fmt.Printf("Error parsing command: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Expected syntax: find:replace=file\n")
 			return
 		}
 
 		content, err := os.ReadFile(file)
 		if err != nil {
-			fmt.Printf("Error reading file: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Error reading file '%s': %v\n", file, err)
+			return
+		}
+
+		if input != string(content) {
+			fmt.Fprintf(os.Stderr, "We can't find the word '%s' in the file '%s'\n", find, file)
 			return
 		}
 
@@ -45,7 +51,7 @@ var replaceCmd = &cobra.Command{
 
 		err = os.WriteFile(file, []byte(text), 0644)
 		if err != nil {
-			fmt.Printf("Error writing to a file: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Error writing to file '%s': %v\n", file, err)
 			return
 		}
 		fmt.Printf("Successfully replaced '%s' with '%s' in file '%s'\n", find, replace, file)

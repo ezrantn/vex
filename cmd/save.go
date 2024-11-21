@@ -17,15 +17,16 @@ var saveCmd = &cobra.Command{
 		parser := dsl.NewParser(input)
 		file, err := parser.ParseFileCommand()
 		if err != nil {
-			fmt.Printf("Error parsing command: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Error parsing command: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Expected syntax: :=file_name\n")
 			return
 		}
 
 		if err := os.WriteFile(file, []byte(loadedContent), 0644); err != nil {
-			fmt.Printf("Failed to save a file: %v\n", err)
+			fmt.Fprintf(os.Stderr, "✖ Failed to save content to file '%s': %v\n", file, err)
 			os.Exit(1)
 		}
 
-		fmt.Println("File saved successfully.")
+		fmt.Printf("✔ Successfully saved content to file '%s'.\n", file)
 	},
 }
