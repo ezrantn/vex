@@ -23,10 +23,10 @@ var saveCmd = &cobra.Command{
 		}
 
 		if err := os.WriteFile(file, []byte(loadedContent), 0644); err != nil {
-			fmt.Fprintf(os.Stderr, "✖ Failed to save content to file '%s': %v\n", file, err)
+			fmt.Fprintf(os.Stderr, "Failed to save content to file '%s': %v\n", file, err)
 			os.Exit(1)
 		}
 
-		fmt.Printf("✔ Successfully saved content to file '%s'.\n", file)
+		fmt.Printf("Successfully saved content to file '%s'.\n", file)
 	},
 }
