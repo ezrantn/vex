@@ -26,11 +26,11 @@ func NewParser(input string) *Parser {
 
 func (p *Parser) expect(expectedType TokenType) (Token, error) {
 	if p.pos >= len(p.tokens) {
-		return Token{}, fmt.Errorf("unexpected end of input")
+		return Token{}, fmt.Errorf("unexpected end of input: was expecting '%s' at position %d", expectedType, p.pos)
 	}
 	token := p.tokens[p.pos]
 	if token.Type != expectedType {
-		return Token{}, fmt.Errorf("expected %s, got %s", expectedType, token.Type)
+		return Token{}, fmt.Errorf("syntax error at position %d, expected '%s' but found '%s' (value: '%s')", p.pos, expectedType, token.Type, token.Value)
 	}
 	p.pos++
 	return token, nil
@@ -39,29 +39,29 @@ func (p *Parser) expect(expectedType TokenType) (Token, error) {
 func (p *Parser) ParseReplaceCommand() (find, replace, file string, err error) {
 	findToken, err := p.expect(TOKEN_ARG)
 	if err != nil {
-		return "", "", "", err
+		return "", "", "", fmt.Errorf("failed to parse 'find' argument: %v", err)
 	}
 	find = findToken.Value
 
 	_, err = p.expect(TOKEN_COLON)
 	if err != nil {
-		return "", "", "", err
+		return "", "", "", fmt.Errorf("missing ':' after 'find' argument: %v", err)
 	}
 
 	replaceToken, err := p.expect(TOKEN_ARG)
 	if err != nil {
-		return "", "", "", err
+		return "", "", "", fmt.Errorf("failed to parse 'replace' argument: %v", err)
 	}
 	replace = replaceToken.Value
 
 	_, err = p.expect(TOKEN_EQUAL)
 	if err != nil {
-		return "", "", "", err
+		return "", "", "", fmt.Errorf("missing '=' after 'replace' argument: %v", err)
 	}
 
 	fileToken, err := p.expect(TOKEN_ARG)
 	if err != nil {
-		return "", "", "", err
+		return "", "", "", fmt.Errorf("failed to parse 'file' argument: %v", err)
 	}
 	file = fileToken.Value
 
@@ -70,16 +70,20 @@ func (p *Parser) ParseReplaceCommand() (find, replace, file string, err error) {
 
 func (p *Parser) ParseFileCommand() (string, error) {
 	if len(p.tokens) < 2 {
-		return "", fmt.Errorf("invalid load command syntax")
+		return "", fmt.Errorf("syntax error: input is too short. Expected ':=file_name', but got incomplete input")
 	}
 
 	// Token 0: := operator
 	if p.tokens[0].Value != ":=" {
-		return "", fmt.Errorf("expected ':=' for file assignment")
+		return "", fmt.Errorf("syntax error: expected ':=' at the beginning of the command but found '%s'", p.tokens[0].Value)
 	}
 
 	// Token 1: File name
 	file := p.tokens[1].Value
+	if file == "" {
+		return "", fmt.Errorf("syntax error: file name cannot be empty after ':='. Please provide a valid file name")
+	}
+
 	return file, nil
 }
 
