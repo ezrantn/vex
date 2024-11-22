@@ -5,8 +5,8 @@ import "strings"
 type TokenType string
 
 const (
-	TOKEN_EOF                TokenType = "EOF"
-	TOKEN_SPECIAL_ASSIGNMENT TokenType = "SPECIAL_ASSIGNMENT" // :=
+	TOKEN_EOF                TokenType = "EOF"				  //
+ 	TOKEN_SPECIAL_ASSIGNMENT TokenType = "SPECIAL_ASSIGNMENT" // :=
 	TOKEN_COLON              TokenType = "COLON"              // :
 	TOKEN_EQUAL              TokenType = "EQUAL"              // =
 	TOKEN_ARG                TokenType = "ARG"

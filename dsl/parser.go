@@ -82,3 +82,29 @@ func (p *Parser) ParseFileCommand() (string, error) {
 	file := p.tokens[1].Value
 	return file, nil
 }
+
+func (p *Parser) ParseFilterCommand() (word, file string, err error) {
+	// Getting the 'word'
+	wordToken, err := p.expect(TOKEN_ARG)
+	if err != nil {
+		return "", "", err
+	}
+
+	word = wordToken.Value
+
+	// Getting the '='
+	_, err = p.expect(TOKEN_EQUAL)
+	if err != nil {
+		return "", "", err
+	}
+
+	// Getting the input file
+	fileToken, err := p.expect(TOKEN_ARG)
+	if err != nil {
+		return "", "", err
+	}
+
+	file = fileToken.Value
+
+	return word, file, nil
+}
