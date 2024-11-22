@@ -87,7 +87,7 @@ func (p *Parser) ParseFilterCommand() (word, file string, err error) {
 	// Getting the 'word'
 	wordToken, err := p.expect(TOKEN_ARG)
 	if err != nil {
-		return "", "", err
+		return "", "", fmt.Errorf("failed to parse 'word' argument: %w", err)
 	}
 
 	word = wordToken.Value
@@ -95,13 +95,13 @@ func (p *Parser) ParseFilterCommand() (word, file string, err error) {
 	// Getting the '='
 	_, err = p.expect(TOKEN_EQUAL)
 	if err != nil {
-		return "", "", err
+		return "", "", fmt.Errorf("failed to find '=' operator: %w", err)
 	}
 
 	// Getting the input file
 	fileToken, err := p.expect(TOKEN_ARG)
 	if err != nil {
-		return "", "", err
+		return "", "", fmt.Errorf("failed to parse 'file' argument: %w", err)
 	}
 
 	file = fileToken.Value
