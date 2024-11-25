@@ -2,6 +2,7 @@ package dsl
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -65,45 +66,87 @@ func TestExpectHandlesUnexpectedEndOfInput(t *testing.T) {
 	}
 }
 
-func TestParseReplaceCommandValidSyntax(t *testing.T) {
-	p := &Parser{
-		expectFunc: func(tokenType TokenType) (Token, error) {
-			switch tokenType {
-			case TOKEN_ARG:
-				return Token{Value: "value"}, nil
-			case TOKEN_COLON, TOKEN_EQUAL:
-				return Token{}, nil
-			default:
-				return Token{}, fmt.Errorf("unexpected token type")
-			}
-		},
+func TestParseReplaceCommandSingleArguments(t *testing.T) {
+	p := &Parser{}
+	p.tokens = []Token{
+		{Type: TOKEN_ARG, Value: "findValue"},
+		{Type: TOKEN_COLON, Value: ":"},
+		{Type: TOKEN_ARG, Value: "replaceValue"},
+		{Type: TOKEN_EQUAL, Value: "="},
+		{Type: TOKEN_ARG, Value: "fileValue"},
 	}
 
-	find, replace, file, err := p.ParseReplaceCommand()
+	findList, replaceList, file, err := p.ParseReplaceCommand()
 
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
-	if find != "value" || replace != "value" || file != "value" {
-		t.Fatalf("expected 'value', 'value', 'value', got %v, %v, %v", find, replace, file)
+
+	expectedFindList := []string{"findValue"}
+	expectedReplaceList := []string{"replaceValue"}
+	expectedFile := "fileValue"
+
+	if !reflect.DeepEqual(findList, expectedFindList) {
+		t.Errorf("expected findList %v, got %v", expectedFindList, findList)
+	}
+
+	if !reflect.DeepEqual(replaceList, expectedReplaceList) {
+		t.Errorf("expected replaceList %v, got %v", expectedReplaceList, replaceList)
+	}
+
+	if file != expectedFile {
+		t.Errorf("expected file %v, got %v", expectedFile, file)
 	}
 }
 
-func TestParseReplaceCommandMissingFindArgument(t *testing.T) {
-	p := &Parser{
-		expectFunc: func(tokenType TokenType) (Token, error) {
-			if tokenType == TOKEN_ARG {
-				return Token{}, fmt.Errorf("missing 'find' argument")
-			}
-			return Token{}, nil
-		},
-	}
+func TestParseReplaceCommandMultipleArguments(t *testing.T) {
+    p := &Parser{}
+    p.tokens = []Token{
+        {Type: TOKEN_ARG, Value: "find1,find2"},
+        {Type: TOKEN_COLON, Value: ":"},
+        {Type: TOKEN_ARG, Value: "replace1,replace2"},
+        {Type: TOKEN_EQUAL, Value: "="},
+        {Type: TOKEN_ARG, Value: "fileValue"},
+    }
+    
+    findList, replaceList, file, err := p.ParseReplaceCommand()
+    
+    if err != nil {
+        t.Fatalf("expected no error, got %v", err)
+    }
+    
+    expectedFindList := []string{"find1", "find2"}
+    expectedReplaceList := []string{"replace1", "replace2"}
+    expectedFile := "fileValue"
+    
+    if !reflect.DeepEqual(findList, expectedFindList) {
+        t.Errorf("expected findList %v, got %v", expectedFindList, findList)
+    }
+    
+    if !reflect.DeepEqual(replaceList, expectedReplaceList) {
+        t.Errorf("expected replaceList %v, got %v", expectedReplaceList, replaceList)
+    }
+    
+    if file != expectedFile {
+        t.Errorf("expected file %v, got %v", expectedFile, file)
+    }
+}
 
-	_, _, _, err := p.ParseReplaceCommand()
-
-	if err == nil || err.Error() != "failed to parse 'find' argument: missing 'find' argument" {
-		t.Fatalf("expected error for missing 'find' argument, got %v", err)
-	}
+func TestParseReplaceCommandMissingColon(t *testing.T) {
+    p := &Parser{}
+    p.tokens = []Token{
+        {Type: TOKEN_ARG, Value: "findValue"},
+        // Missing TOKEN_COLON here
+        {Type: TOKEN_ARG, Value: "replaceValue"},
+        {Type: TOKEN_EQUAL, Value: "="},
+        {Type: TOKEN_ARG, Value: "fileValue"},
+    }
+    
+    _, _, _, err := p.ParseReplaceCommand()
+    
+    if err == nil || !strings.Contains(err.Error(), "missing ':' after 'find' argument") {
+        t.Fatalf("expected error about missing ':', got %v", err)
+    }
 }
 
 func TestParseFileCommandValidInput(t *testing.T) {

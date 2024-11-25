@@ -2,11 +2,12 @@ package dsl
 
 import (
 	"fmt"
+	"strings"
 )
 
 type Parser struct {
-	tokens []Token
-	pos    int
+	tokens     []Token
+	pos        int
 	expectFunc func(expectedType TokenType) (Token, error)
 }
 
@@ -27,50 +28,59 @@ func NewParser(input string) *Parser {
 
 func (p *Parser) expect(expectedType TokenType) (Token, error) {
 	if p.expectFunc != nil {
-        return p.expectFunc(expectedType)
-    }
+		return p.expectFunc(expectedType)
+	}
 
-    if p.pos >= len(p.tokens) {
-        return Token{}, fmt.Errorf("unexpected end of input: was expecting '%s' at position %d", expectedType, p.pos)
-    }
-    token := p.tokens[p.pos]
-    if token.Type != expectedType {
-        return Token{}, fmt.Errorf("syntax error at position %d, expected '%s' but found '%s' (value: '%s')", p.pos, expectedType, token.Type, token.Value)
-    }
-    p.pos++
-    return token, nil
+	if p.pos >= len(p.tokens) {
+		return Token{}, fmt.Errorf("unexpected end of input: was expecting '%s' at position %d", expectedType, p.pos)
+	}
+	token := p.tokens[p.pos]
+	if token.Type != expectedType {
+		return Token{}, fmt.Errorf("syntax error at position %d, expected '%s' but found '%s' (value: '%s')", p.pos, expectedType, token.Type, token.Value)
+	}
+	p.pos++
+	return token, nil
 }
 
-func (p *Parser) ParseReplaceCommand() (find, replace, file string, err error) {
+func (p *Parser) ParseReplaceCommand() (findList, replaceList []string, file string, err error) {
 	findToken, err := p.expect(TOKEN_ARG)
 	if err != nil {
-		return "", "", "", fmt.Errorf("failed to parse 'find' argument: %v", err)
+		return nil, nil, "", fmt.Errorf("failed to parse 'find' argument: %v", err)
 	}
-	find = findToken.Value
 
 	_, err = p.expect(TOKEN_COLON)
 	if err != nil {
-		return "", "", "", fmt.Errorf("missing ':' after 'find' argument: %v", err)
+		return nil, nil, "", fmt.Errorf("missing ':' after 'find' argument: %v", err)
 	}
 
 	replaceToken, err := p.expect(TOKEN_ARG)
 	if err != nil {
-		return "", "", "", fmt.Errorf("failed to parse 'replace' argument: %v", err)
+		return nil, nil, "", fmt.Errorf("failed to parse 'replace' argument: %v", err)
 	}
-	replace = replaceToken.Value
 
 	_, err = p.expect(TOKEN_EQUAL)
 	if err != nil {
-		return "", "", "", fmt.Errorf("missing '=' after 'replace' argument: %v", err)
+		return nil, nil, "", fmt.Errorf("missing '=' after 'replace' argument: %v", err)
 	}
 
 	fileToken, err := p.expect(TOKEN_ARG)
 	if err != nil {
-		return "", "", "", fmt.Errorf("failed to parse 'file' argument: %v", err)
+		return nil, nil, "", fmt.Errorf("failed to parse 'file' argument: %v", err)
 	}
 	file = fileToken.Value
 
-	return find, replace, file, nil
+	if strings.Contains(findToken.Value, ",") || strings.Contains(replaceToken.Value, ",") {
+		findList = strings.Split(findToken.Value, ",")
+		replaceList = strings.Split(replaceToken.Value, ",")
+		if len(findList) != len(replaceList) {
+			return nil, nil, "", fmt.Errorf("'find' and 'replace' lists must have the same number of elements")
+		}
+	} else {
+		findList = []string{findToken.Value}
+		replaceList = []string{replaceToken.Value}
+	}
+
+	return findList, replaceList, file, nil
 }
 
 func (p *Parser) ParseFileCommand() (string, error) {

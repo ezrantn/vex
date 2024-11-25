@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/ezrantn/vex/dsl"
+	"github.com/ezrantn/vex/helper"
 	"github.com/spf13/cobra"
 )
 
@@ -19,7 +20,7 @@ var replaceCmd = &cobra.Command{
 		input := args[0]
 
 		parser := dsl.NewParser(input)
-		find, replace, file, err := parser.ParseReplaceCommand()
+		findList, replaceList, file, err := parser.ParseReplaceCommand()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			fmt.Fprintf(os.Stderr, "Expected syntax: find:replace=file\n")
@@ -32,21 +33,35 @@ var replaceCmd = &cobra.Command{
 			return
 		}
 
-		if input != string(content) {
-			fmt.Fprintf(os.Stderr, "We can't find the word '%s' in the file '%s'\n", find, file)
+		text := string(content)
+		found := false
+
+		for _, find := range findList {
+			if caseInsensitive {
+				if strings.Contains(strings.ToLower(text), strings.ToLower(find)) {
+					found = true
+					break
+				}
+			} else {
+				if strings.Contains(text, find) {
+					found = true
+					break
+				}
+			}
+		}
+
+		if !found {
+			fmt.Fprintf(os.Stderr, "None of the specified terms in 'find' exist in the file '%s'\n", file)
 			return
 		}
 
-		text := string(content)
-
-		if caseInsensitive {
-			text = strings.ReplaceAll(
-				strings.ToLower(text),
-				strings.ToLower(find),
-				replace,
-			)
-		} else {
-			text = strings.ReplaceAll(text, find, replace)
+		for i, find := range findList {
+			replace := replaceList[i]
+			if caseInsensitive {
+				text = helper.ReplaceAllIgnoreCase(text, find, replace)
+			} else {
+				text = strings.ReplaceAll(text, find, replace)
+			}
 		}
 
 		err = os.WriteFile(file, []byte(text), 0644)
@@ -54,7 +69,7 @@ var replaceCmd = &cobra.Command{
 			fmt.Fprintf(os.Stderr, "Error writing to file '%s': %v\n", file, err)
 			return
 		}
-		fmt.Printf("Successfully replaced '%s' with '%s' in file '%s'\n", find, replace, file)
+		fmt.Printf("Successfully replaced %d item(s) in file '%s'\n", len(findList), file)
 	},
 }
 
