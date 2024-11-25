@@ -7,6 +7,7 @@ import (
 type Parser struct {
 	tokens []Token
 	pos    int
+	expectFunc func(expectedType TokenType) (Token, error)
 }
 
 func NewParser(input string) *Parser {
@@ -25,15 +26,19 @@ func NewParser(input string) *Parser {
 }
 
 func (p *Parser) expect(expectedType TokenType) (Token, error) {
-	if p.pos >= len(p.tokens) {
-		return Token{}, fmt.Errorf("unexpected end of input: was expecting '%s' at position %d", expectedType, p.pos)
-	}
-	token := p.tokens[p.pos]
-	if token.Type != expectedType {
-		return Token{}, fmt.Errorf("syntax error at position %d, expected '%s' but found '%s' (value: '%s')", p.pos, expectedType, token.Type, token.Value)
-	}
-	p.pos++
-	return token, nil
+	if p.expectFunc != nil {
+        return p.expectFunc(expectedType)
+    }
+
+    if p.pos >= len(p.tokens) {
+        return Token{}, fmt.Errorf("unexpected end of input: was expecting '%s' at position %d", expectedType, p.pos)
+    }
+    token := p.tokens[p.pos]
+    if token.Type != expectedType {
+        return Token{}, fmt.Errorf("syntax error at position %d, expected '%s' but found '%s' (value: '%s')", p.pos, expectedType, token.Type, token.Value)
+    }
+    p.pos++
+    return token, nil
 }
 
 func (p *Parser) ParseReplaceCommand() (find, replace, file string, err error) {
