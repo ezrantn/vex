@@ -48,19 +48,22 @@ func (p *Parser) ParseReplaceCommand() (findList, replaceList []string, file str
 		return nil, nil, "", fmt.Errorf("failed to parse 'find' argument: %v", err)
 	}
 
-	_, err = p.expect(TOKEN_COLON)
-	if err != nil {
-		return nil, nil, "", fmt.Errorf("missing ':' after 'find' argument: %v", err)
+	nextToken := p.tokens[p.pos]
+	if nextToken.Type != TOKEN_COLON && nextToken.Type != TOKEN_EQUAL {
+		return nil, nil, "", fmt.Errorf("expected ':' or '=' after find argument")
 	}
+	p.pos++
 
 	replaceToken, err := p.expect(TOKEN_ARG)
 	if err != nil {
 		return nil, nil, "", fmt.Errorf("failed to parse 'replace' argument: %v", err)
 	}
 
-	_, err = p.expect(TOKEN_EQUAL)
-	if err != nil {
-		return nil, nil, "", fmt.Errorf("missing '=' after 'replace' argument: %v", err)
+	if nextToken.Type == TOKEN_COLON {
+		_, err = p.expect(TOKEN_EQUAL)
+		if err != nil {
+			return nil, nil, "", fmt.Errorf("missing '=' after 'replace' argument: %v", err)
+		}
 	}
 
 	fileToken, err := p.expect(TOKEN_ARG)
@@ -88,12 +91,10 @@ func (p *Parser) ParseFileCommand() (string, error) {
 		return "", fmt.Errorf("syntax error: input is too short. Expected ':=file_name', but got incomplete input")
 	}
 
-	// Token 0: := operator
 	if p.tokens[0].Value != ":=" {
 		return "", fmt.Errorf("syntax error: expected ':=' at the beginning of the command but found '%s'", p.tokens[0].Value)
 	}
 
-	// Token 1: File name
 	file := p.tokens[1].Value
 	if file == "" {
 		return "", fmt.Errorf("syntax error: file name cannot be empty after ':='. Please provide a valid file name")
@@ -103,7 +104,6 @@ func (p *Parser) ParseFileCommand() (string, error) {
 }
 
 func (p *Parser) ParseFilterCommand() (word, file string, err error) {
-	// Getting the 'word'
 	wordToken, err := p.expect(TOKEN_ARG)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to parse 'word' argument: %w", err)
@@ -111,13 +111,57 @@ func (p *Parser) ParseFilterCommand() (word, file string, err error) {
 
 	word = wordToken.Value
 
-	// Getting the '='
 	_, err = p.expect(TOKEN_EQUAL)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to find '=' operator: %w", err)
 	}
 
-	// Getting the input file
+	fileToken, err := p.expect(TOKEN_ARG)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to parse 'file' argument: %w", err)
+	}
+
+	file = fileToken.Value
+
+	return word, file, nil
+}
+
+func (p *Parser) ParseRegexCommand() (pattern, file string, err error) {
+	patternToken, err := p.expect(TOKEN_ARG)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to parse the regex: %w", err)
+	}
+
+	pattern = patternToken.Value
+
+	_, err = p.expect(TOKEN_EQUAL)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to find '=' operator: %w", err)
+	}
+
+	fileToken, err := p.expect(TOKEN_ARG)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to parse 'file' argument: %w", err)
+	}
+
+	file = fileToken.Value
+
+	return pattern, file, nil
+}
+
+func (p *Parser) ParseCountCommand() (word, file string, err error) {
+	wordToken, err := p.expect(TOKEN_ARG)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to parse 'count' argument: %w", err)
+	}
+
+	word = wordToken.Value
+
+	_, err = p.expect(TOKEN_EQUAL)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to find '=' operator: %w", err)
+	}
+
 	fileToken, err := p.expect(TOKEN_ARG)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to parse 'file' argument: %w", err)
