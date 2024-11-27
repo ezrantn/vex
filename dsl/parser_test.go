@@ -100,53 +100,58 @@ func TestParseReplaceCommandSingleArguments(t *testing.T) {
 }
 
 func TestParseReplaceCommandMultipleArguments(t *testing.T) {
-    p := &Parser{}
-    p.tokens = []Token{
-        {Type: TOKEN_ARG, Value: "find1,find2"},
-        {Type: TOKEN_COLON, Value: ":"},
-        {Type: TOKEN_ARG, Value: "replace1,replace2"},
-        {Type: TOKEN_EQUAL, Value: "="},
-        {Type: TOKEN_ARG, Value: "fileValue"},
-    }
-    
-    findList, replaceList, file, err := p.ParseReplaceCommand()
-    
-    if err != nil {
-        t.Fatalf("expected no error, got %v", err)
-    }
-    
-    expectedFindList := []string{"find1", "find2"}
-    expectedReplaceList := []string{"replace1", "replace2"}
-    expectedFile := "fileValue"
-    
-    if !reflect.DeepEqual(findList, expectedFindList) {
-        t.Errorf("expected findList %v, got %v", expectedFindList, findList)
-    }
-    
-    if !reflect.DeepEqual(replaceList, expectedReplaceList) {
-        t.Errorf("expected replaceList %v, got %v", expectedReplaceList, replaceList)
-    }
-    
-    if file != expectedFile {
-        t.Errorf("expected file %v, got %v", expectedFile, file)
-    }
+	p := &Parser{}
+	p.tokens = []Token{
+		{Type: TOKEN_ARG, Value: "find1,find2"},
+		{Type: TOKEN_COLON, Value: ":"},
+		{Type: TOKEN_ARG, Value: "replace1,replace2"},
+		{Type: TOKEN_EQUAL, Value: "="},
+		{Type: TOKEN_ARG, Value: "fileValue"},
+	}
+
+	findList, replaceList, file, err := p.ParseReplaceCommand()
+
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	expectedFindList := []string{"find1", "find2"}
+	expectedReplaceList := []string{"replace1", "replace2"}
+	expectedFile := "fileValue"
+
+	if !reflect.DeepEqual(findList, expectedFindList) {
+		t.Errorf("expected findList %v, got %v", expectedFindList, findList)
+	}
+
+	if !reflect.DeepEqual(replaceList, expectedReplaceList) {
+		t.Errorf("expected replaceList %v, got %v", expectedReplaceList, replaceList)
+	}
+
+	if file != expectedFile {
+		t.Errorf("expected file %v, got %v", expectedFile, file)
+	}
 }
 
-func TestParseReplaceCommandMissingColon(t *testing.T) {
-    p := &Parser{}
-    p.tokens = []Token{
-        {Type: TOKEN_ARG, Value: "findValue"},
-        // Missing TOKEN_COLON here
-        {Type: TOKEN_ARG, Value: "replaceValue"},
-        {Type: TOKEN_EQUAL, Value: "="},
-        {Type: TOKEN_ARG, Value: "fileValue"},
-    }
-    
-    _, _, _, err := p.ParseReplaceCommand()
-    
-    if err == nil || !strings.Contains(err.Error(), "missing ':' after 'find' argument") {
-        t.Fatalf("expected error about missing ':', got %v", err)
-    }
+func TestParseReplaceCommandMissingFind(t *testing.T) {
+	tokens := []Token{
+		{Type: TOKEN_COLON},
+		{Type: TOKEN_ARG, Value: "bar"},
+		{Type: TOKEN_EQUAL},
+		{Type: TOKEN_ARG, Value: "test.txt"},
+	}
+
+	parser := &Parser{tokens: tokens}
+
+	_, _, _, err := parser.ParseReplaceCommand()
+
+	if err == nil {
+		t.Error("Expected error for missing find argument, got nil")
+	}
+
+	expectedError := "failed to parse 'find' argument"
+	if !strings.Contains(err.Error(), expectedError) {
+		t.Errorf("Expected error containing '%s', got '%s'", expectedError, err.Error())
+	}
 }
 
 func TestParseFileCommandValidInput(t *testing.T) {
@@ -221,5 +226,82 @@ func TestParseFilterCommandMissingWord(t *testing.T) {
 
 	if err == nil || err.Error() != "failed to parse 'word' argument: missing word argument" {
 		t.Fatalf("expected error for missing word argument, got %v", err)
+	}
+}
+
+func TestParseRegexCommandSuccess(t *testing.T) {
+	parser := &Parser{
+		expectFunc: func(tokenType TokenType) (Token, error) {
+			switch tokenType {
+			case TOKEN_ARG:
+				return Token{Value: "validPattern"}, nil
+			case TOKEN_EQUAL:
+				return Token{}, nil
+			default:
+				return Token{}, fmt.Errorf("unexpected token type")
+			}
+		},
+	}
+
+	pattern, file, err := parser.ParseRegexCommand()
+
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if pattern != "validPattern" || file != "validPattern" {
+		t.Fatalf("expected pattern and file to be 'validPattern', got pattern: %s, file: %s", pattern, file)
+	}
+}
+
+func TestParseRegexCommandMissingPattern(t *testing.T) {
+	parser := &Parser{
+		expectFunc: func(tokenType TokenType) (Token, error) {
+			if tokenType == TOKEN_ARG {
+				return Token{}, fmt.Errorf("missing pattern token")
+			}
+			return Token{}, nil
+		},
+	}
+
+	_, _, err := parser.ParseRegexCommand()
+
+	if err == nil || !strings.Contains(err.Error(), "failed to parse the regex") {
+		t.Fatalf("expected error for missing pattern token, got %v", err)
+	}
+}
+
+func TestParseCountCommandValidArgs(t *testing.T) {
+	tokens := []Token{
+		{Type: TOKEN_ARG, Value: "hello"},
+		{Type: TOKEN_EQUAL, Value: "="},
+		{Type: TOKEN_ARG, Value: "test.txt"},
+	}
+
+	parser := &Parser{tokens: tokens}
+
+	word, file, err := parser.ParseCountCommand()
+
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if word != "hello" || file != "test.txt" {
+		t.Fatalf("expected pattern to be 'hello' and file to be 'test.txt' but got: %v", err)
+	}
+}
+
+func TestParseCountCommandMissingWord(t *testing.T) {
+	tokens := []Token{
+		{Type: TOKEN_EQUAL, Value: "="},
+		{Type: TOKEN_ARG, Value: "test.txt"},
+	}
+
+	parser := &Parser{tokens: tokens}
+
+	_, _, err := parser.ParseCountCommand()
+
+	if err == nil || !strings.Contains(err.Error(), "failed to parse 'count' argument") {
+		t.Fatalf("expected error for missing pattern token, got %v", err)
 	}
 }

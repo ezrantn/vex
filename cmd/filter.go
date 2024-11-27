@@ -34,6 +34,8 @@ var filterCmd = &cobra.Command{
 			return
 		}
 
+		defer fileReader.Close()
+
 		scanner := bufio.NewScanner(fileReader)
 		lineNumber := 1
 
