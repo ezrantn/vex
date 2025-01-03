@@ -171,3 +171,26 @@ func (p *Parser) ParseCountCommand() (word, file string, err error) {
 
 	return word, file, nil
 }
+
+func (p *Parser) ParseFormatType() (sourceType string, toType string, err error) {
+	sourceTypeToken, err := p.expect(TOKEN_ARG)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to parse 'sourceType' argument: %w", err)
+	}
+
+	sourceType = sourceTypeToken.Value
+
+	_, err = p.expect(TOKEN_EQUAL)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to find '=' operator: %w", err)
+	}
+
+	toTypeToken, err := p.expect(TOKEN_ARG)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to parse 'toType' argument: %w", err)
+	}
+
+	toType = toTypeToken.Value
+
+	return sourceType, toType, nil
+}

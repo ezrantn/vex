@@ -29,5 +29,6 @@ func init() {
 		filterCmd,
 		regexCmd,
 		countCmd,
+		formatCmd,
 	)
 }

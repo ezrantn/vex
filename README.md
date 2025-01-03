@@ -1,6 +1,4 @@
-# Vex
-
-## Overview
+# vex
 
 Vex is a domain-specific language (DSL) for text processing that combines DSL features with a command-line interface (CLI). It is designed for simplicity, optimal performance, scalability, and maintainability.
 
@@ -155,7 +153,7 @@ vex count "success=input.txt"
 
 ## License
 
-This tool is open-source and available under the [MIT](https://github.com/ezrantn/vex/blob/main/LICENSE) License.
+This tool is open-source and available under the [MIT License](https://github.com/ezrantn/vex/blob/main/LICENSE).
 
 ## Contributions
 
